@@ -3,19 +3,20 @@
 
 import uuid
 from datetime import datetime
-from typing import List, Tuple
+from typing import List,Tuple
 from models.usuario import Cliente
 from models.producto import Producto
 
 
 class Pedido:
-    """Representa un pedido hecho por un cliente"""
+    """
+    Representa un pedido hecho por un cliente
+    """
 
-
-    def __init__(self, cliente:Cliente, lista_items:List[Tuple[Producto, int]]):
-        self.id: str=str(uuid.uuid4())
+    def __init__(self,cliente:Cliente,lista_items:List[Tuple[Producto, int]]):
+        self.id:str=str(uuid.uuid4())
         self.cliente:Cliente=cliente
-        self.lista_items:List[Tuple[Producto, int]]=lista_items     # Haciendolo asi queda una lista de tuplas formadas por el producto y la cantidad 
+        self.lista_items:List[Tuple[Producto,int]]=lista_items     # Haciendolo asi queda una lista de tuplas formadas por el producto y la cantidad 
         self.fecha_pedido:datetime=datetime.now()
 
 
@@ -27,11 +28,12 @@ class Pedido:
 
 
     def total_compra(self)->float:
-        """Metodo que calcula el importe total de una compra sumando los precios de los productos en la lista"""
-
+        """
+        Metodo que calcula el importe total de una compra sumando los precios de los productos en la lista
+        """
         total=0.0
-        for producto, cantidad in self.lista_items:
-            total +=producto.precio*cantidad
+        for producto,cantidad in self.lista_items:
+            total+=producto.precio*cantidad
         return total
 
     
