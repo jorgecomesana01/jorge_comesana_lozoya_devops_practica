@@ -9,9 +9,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 # Codigo fuente con permisos para appuser
-COPY --chown=appuser:appuser Tienda_API/ ./Tienda_API/
+COPY --chown=appuser:appuser src/ ./src/
 USER appuser
-WORKDIR /app/Tienda_API
+WORKDIR /app/src
 EXPOSE 8000
 # Comando de inicio. 0.0.0.0 para ser accesible desde fuera del docker
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
