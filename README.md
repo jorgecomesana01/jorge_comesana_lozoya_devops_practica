@@ -1,14 +1,14 @@
-# Práctica 2: cliente Python y frontend para la API de la tienda online
+# Práctica 3
 
 Tres piezas independientes que usan los mismos endpoints HTTP y trabajan sobre los mismos datos:
 
 ```
-Tienda_API/           API FastAPI              
+src/                  API FastAPI              
 cliente_python/       cliente con requests         -> cliente.py
 frontend_streamlit/   frontend web con Streamlit   -> app.py
 ```
 
-Ni el cliente ni el frontend importan nada de la API (ni `TiendaService`, ni modelos, ni esquemas): solo hablan HTTP.
+Ni el cliente ni el frontend importan nada de la API (ni TiendaService, ni modelos, ni esquemas): solo hablan HTTP.
 
 ## 0. Instalación
 
@@ -17,16 +17,19 @@ Desde la carpeta raíz del proyecto, crear el venv e instalar las dependencias (
 ```
 python -m venv venv
 venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
+
+`requirements.txt` contiene solo lo necesario para ejecutar la API (es el que usa Docker); 
+`requirements-dev.txt` lo incluye y añade pytest, requests y streamlit para trabajar en local.
 
 El segundo equipo, que solo ejecuta el cliente, necesita únicamente `pip install -r cliente_python/requirements.txt`.
 
 ## 1. Arrancar la API
 
-Los comandos cd parten de la carpeta raíz del proyecto; usa una terminal por cada pieza.
+Los comandos cd parten de la carpeta raíz del proyecto; se usa una terminal por cada pieza antes de usar el Docker, una vez aplicado ya no será necesario.
 
-Desde la carpeta `Tienda_API/`:
+Desde la carpeta `src/`:
 
 ```
 uvicorn main:app --reload
@@ -96,3 +99,82 @@ Con la API en marcha, los datos creados desde cualquiera de los tres clientes ap
 - hacer un pedido desde el frontend y consultarlo en `GET /usuarios/{id}/pedidos` de `/docs`.
 
 Los datos viven en memoria: al reiniciar la API (también con `--reload` al guardar un archivo) vuelven al estado inicial.
+
+## 6. Docker
+
+Cada pieza tiene su propia imagen, con su `Dockerfile`, y `compose.yaml` las arranca juntas:
+
+```
+Dockerfile                      imagen de la API            (tienda-api)
+frontend_streamlit/Dockerfile   imagen del frontend         (tienda-frontend)
+cliente_python/Dockerfile       imagen del cliente          (tienda-cliente)
+compose.yaml                    define los tres servicios: api, frontend y cliente
+```
+
+Dentro de la red de Compose cada servicio se alcanza por su nombre, así que el frontend y el cliente hablan con la API en
+`http://api:8000`. No se usa `localhost`, porque dentro de un contenedor `localhost` es el propio contenedor.
+
+### Con Docker Compose
+
+```
+docker compose up --build        # construye las imágenes y arranca la API y el frontend
+docker compose up -d --build     # lo mismo, en segundo plano
+docker compose run --rm cliente  # ejecuta el cliente una vez contra la API (la arranca si hace falta)
+docker compose logs -f api       # ver los logs de un servicio
+docker compose down              # parar y eliminar los contenedores
+```
+
+El cliente no es un servidor: hace su recorrido y termina, por eso no arranca con `up` y se lanza con `run`.
+El frontend y el cliente esperan a que la API esté lista (`healthcheck`) antes de arrancar.
+
+| Servicio | Dirección en el equipo |
+|---|---|
+| API | http://localhost:8000/docs |
+| Frontend | http://localhost:8501 |
+
+Para cambiar los puertos del equipo sin editar el archivo:
+`PUERTO=8080 PUERTO_FRONTEND=8502 docker compose up` (en PowerShell: `$env:PUERTO=8080; $env:PUERTO_FRONTEND=8502; docker compose up`).
+
+### Construir y ejecutar cada imagen por separado
+
+```
+docker build -t tienda-api:1.0 .
+docker run --rm -p 8000:8000 --name tienda tienda-api:1.0
+
+docker build -t tienda-frontend:1.0 ./frontend_streamlit
+docker run --rm -p 8501:8501 -e TIENDA_API_URL=http://host.docker.internal:8000 tienda-frontend:1.0
+
+docker build -t tienda-cliente:1.0 ./cliente_python
+docker run --rm tienda-cliente:1.0 python cliente.py http://host.docker.internal:8000
+```
+
+`host.docker.internal` es la forma de llegar desde un contenedor a un puerto publicado en el equipo (Docker Desktop).
+Para tener la API en segundo plano: `docker run -d -p 8000:8000 --name tienda tienda-api:1.0`, `docker logs tienda`,
+`docker stop tienda && docker rm tienda`.
+
+### Variables de entorno
+
+| Variable | Dónde | Para qué | Valor por defecto |
+|---|---|---|---|
+| `TIENDA_API_URL` | frontend | dirección de la API | `http://localhost:8000` (en Compose: `http://api:8000`) |
+| `PUERTO` | compose.yaml | puerto del equipo para la API | `8000` |
+| `PUERTO_FRONTEND` | compose.yaml | puerto del equipo para el frontend | `8501` |
+
+La API no lee variables de entorno. El cliente recibe la dirección de la API como argumento (`python cliente.py URL`).
+
+### Comprobar que funciona
+
+1. `docker compose up --build` y abrir `http://localhost:8000/docs`: se ve la documentación de la API.
+2. Abrir `http://localhost:8501`: se ve el frontend con las pestañas Productos, Crear producto, Usuarios, Nuevo pedido y
+   Pedidos de un usuario, y con los productos iniciales cargados.
+3. `docker compose run --rm cliente` recorre el flujo completo y termina con `Flujo completado correctamente.`
+4. Los tres usan los mismos datos: el usuario que crea el cliente aparece en la pestaña Usuarios del frontend y en
+   `GET /usuarios` de `/docs`.
+5. `docker run --rm tienda-api:1.0 whoami` imprime `appuser`: la aplicación no se ejecuta como root.
+
+### Descargar la imagen 
+
+"""
+docker pull superbojum/tienda-api:1.0
+docker run --rm -p 8000:8000 superbojum/tienda-api:1.0
+"""
