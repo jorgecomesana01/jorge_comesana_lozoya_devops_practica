@@ -1,0 +1,21 @@
+# Python entorno virtual y chachés
+*/__pycache__/
+*/*.pyc
+*/.pytest_cache/
+.venv/
+venv/
+P3/
+
+# Git y sistema
+.git
+.gitignore
+.DS_Store
+
+# No hacen falta dentro de la imagen de la API
+*/tests/
+cliente_python/
+frontend_streamlit/
+requirements-dev.txt
+README.md
+Dockerfile
+.dockerignore
