@@ -1,4 +1,4 @@
-# Python
+# Python entorno virtual y chachés
 */__pycache__/
 */*.pyc
 */.pytest_cache/
