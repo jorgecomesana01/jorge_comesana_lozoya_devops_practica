@@ -1,7 +1,7 @@
 # Python entorno virtual y chachés
-*/__pycache__/
-*/*.pyc
-*/.pytest_cache/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
 .venv/
 venv/
 P3/
@@ -12,7 +12,7 @@ P3/
 .DS_Store
 
 # No hacen falta dentro de la imagen de la API
-*/tests/
+**/tests/
 cliente_python/
 frontend_streamlit/
 requirements-dev.txt
