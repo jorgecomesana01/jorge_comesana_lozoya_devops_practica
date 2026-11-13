@@ -3,7 +3,8 @@ services:
         build: .
         image: tienda-api:1.0
         container_name: tienda
-        ports: -"${PUERTO:-8000}:8000"
+        ports: 
+            - "${PUERTO:-8000}:8000"
         healthcheck:
             test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
             interval: 5s
@@ -14,7 +15,8 @@ services:
     frontend:
         build: ./frontend_streamlit
         image: tienda-frontend:1.0
-        ports: -"${PUERTO_FRONTEND:-8501}:8501"
+        ports: 
+            - "${PUERTO_FRONTEND:-8501}:8501"
         environment:
             TIENDA_API_URL: http://api:8000
         depends_on:
@@ -23,8 +25,8 @@ services:
         restart: unless-stopped
     cliente:
         build: ./cliente_python
-        image: tienda_cliente:1.0
-        command: ["python","cliente.py","http://api:8000"]
+        image: tienda-cliente:1.0
+        command: ["python", "cliente.py", "http://api:8000"]
         depends_on:
             api:
                 condition: service_healthy
