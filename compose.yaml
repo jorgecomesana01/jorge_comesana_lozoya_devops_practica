@@ -25,7 +25,7 @@ services:
         restart: unless-stopped
     cliente:
         build: ./cliente_python
-        image: tienda_cliente:1.0
+        image: tienda-cliente:1.0
         command: ["python", "cliente.py", "http://api:8000"]
         depends_on:
             api:
