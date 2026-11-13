@@ -2,7 +2,6 @@ services:
     api:
         build: .
         image: tienda-api:1.0
-        container_name: tienda
         ports: 
             - "${PUERTO:-8000}:8000"
         healthcheck:
